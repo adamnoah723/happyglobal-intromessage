@@ -3,6 +3,9 @@ name: Enrich leads & draft emails
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   enrich:
     runs-on: ubuntu-latest
