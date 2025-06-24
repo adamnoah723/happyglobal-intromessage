@@ -98,18 +98,36 @@ def scrape_site(url: str) -> dict:
     return out
 
 # ---------- OpenAI helper ---------- #
-def openai_chat(prompt: str) -> str:
-    r = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers={"Authorization": f"Bearer {OPENAI_KEY}",
-                 "Content-Type": "application/json"},
-        json={"model": "gpt-4o-mini",  # switch to "gpt-4o-mini" if desired
-              "temperature": 0.6,
-              "messages": [{"role": "user", "content": prompt}]},
-        timeout=30
-    )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"].strip()
+import requests, time
+
+def openai_chat(prompt: str, retries: int = 3, backoff: float = 2.0) -> str:
+    """Call OpenAI with basic retry on transient network errors."""
+    for attempt in range(1, retries + 1):
+        try:
+            r = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENAI_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "gpt-4o-mini",   # o3; keep alias so it auto-updates
+                    "temperature": 0.6,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=60,
+            )
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip()
+
+        except (requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as e:
+            if attempt < retries:
+                sleep_for = backoff ** (attempt - 1)
+                time.sleep(sleep_for)
+                continue
+            raise RuntimeError(f"OpenAI request failed after {retries} attempts: {e}")
 
 # ---------- prompt builders ---------- #
 def build_profile_prompt(company: str, brief: str, keywords: str) -> str:
