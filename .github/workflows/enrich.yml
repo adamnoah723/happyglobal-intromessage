@@ -1,0 +1,35 @@
+name: Enrich leads & draft emails
+
+on:
+  workflow_dispatch:
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+      SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+
+      - name: Run processor
+        run: python process_leads.py
+
+      - name: Commit results
+        run: |
+          git config user.name  "gh-action"
+          git config user.email "action@github"
+          git add enriched_results.csv
+          git commit -m "Add enriched results $(date -u +'%Y-%m-%d-%H%M')"
+          git push
