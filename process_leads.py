@@ -103,7 +103,7 @@ def openai_chat(prompt: str) -> str:
         "https://api.openai.com/v1/chat/completions",
         headers={"Authorization": f"Bearer {OPENAI_KEY}",
                  "Content-Type": "application/json"},
-        json={"model": "gpt-4o4-mini",  # switch to "gpt-4o-mini" if desired
+        json={"model": "gpt-4o-mini",  # switch to "gpt-4o-mini" if desired
               "temperature": 0.6,
               "messages": [{"role": "user", "content": prompt}]},
         timeout=30
