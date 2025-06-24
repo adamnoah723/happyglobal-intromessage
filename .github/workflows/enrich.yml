@@ -3,7 +3,7 @@ name: Enrich leads & draft emails
 on:
   workflow_dispatch:
 
-permissions:
+permissions:          # <-- allows the bot to push results
   contents: write
 
 jobs:
