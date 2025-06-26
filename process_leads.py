@@ -140,39 +140,68 @@ def build_profile_prompt(company: str, brief: str, keywords: str) -> str:
     )
 
 def build_email(row, profile: str) -> str:
+    """
+    Generate a first-touch email (<140 words) that sounds like an experienced
+    sales professional and expert copywriter.  Includes:
+      • Dynamic, bespoke opening sentence
+      • Two company-specific facts for credibility
+      • Product bullets, commercial terms, choice CTA
+    """
+    # -------------------------------- recipient & greeting
     contact  = row.get("ContactName", "") or "Snack Category Manager"
     greeting = f"Hello {contact},"
-    intro    = ("My name is Adam Noah Azlan, Senior Business Development Representative at Happy Global, "
-                "a U.S.–based importer of award-winning Asian snack brands.")
 
-    # robust two-detail hook
-    lines = [ln.strip() for ln in profile.splitlines() if ln.strip()]
-    hook1 = lines[0] if lines else ""
-    hook2 = lines[1] if len(lines) > 1 else ""
-    hook = (f"We understand that {row['Company']} specialises in {hook1.lower()} "
-            f"and {hook2.lower()}. Our snacks align directly with that focus.")
+    # -------------------------------- pull two concrete facts
+    facts = [ln.strip() for ln in profile.splitlines() if ln.strip()]
+    fact1 = facts[0] if facts else ""
+    fact2 = facts[1] if len(facts) > 1 else ""
+
+    # -------------------------------- dynamic first sentence
+    opener_prompt = (
+        "Craft ONE opening sentence that feels genuinely researched. "
+        "Pick whichever pattern suits the facts:\n"
+        "A) “I’ve long admired how [Company] …”\n"
+        "B) “Your commitment to … immediately stood out.”\n"
+        "C) “Few distributors match [Company] when it comes to …”\n\n"
+        f"Facts you can reference:\n• {fact1}\n• {fact2}\n\n"
+        "Return only the sentence—no greeting, no extra text."
+    )
+    dynamic_opening = openai_chat(opener_prompt)
+
+    # -------------------------------- fixed copy blocks
+    intro = (
+        "My name is Adam Noah Azlan, Senior Business Development Representative "
+        "at Happy Global."
+    )
 
     products = (
-        "• CRISUP Potato Sticks – freeze-dried then vacuum-fried (≈50 % less oil), "
-        "zero trans fat, six gourmet flavours, #1 global potato-stick.\n"
-        "• KOZED Peelable Gummies – 28 % real juice, Halal-certified, zero fat, interactive peelable fruit shapes."
+        "• CRISUP Potato Sticks — freeze-dried then vacuum-fried (≈50 % less oil), zero trans fat, "
+        "six gourmet flavours, #1 global potato-stick.\n"
+        "• KOZED Peelable Gummies — 28 % real juice, Halal-certified, zero fat, interactive 3-D peelable fruit shapes."
     )
-    incentives = ("MOQ tiers 10 / 70 (free shipping) / 140 cases; free merchandising strip per case; "
-                  "one free branded display for every $500 ordered.")
-    cta = ("Would a two-flavour tasting kit be helpful, or would you prefer a brief "
-           "10-minute call to discuss next steps?")
 
+    incentives = (
+        "MOQ tiers 10 / 70 (free freight) / 140 cases; every case includes a merchandising strip; "
+        "one branded floor display per $500 ordered."
+    )
+
+    cta = (
+        "Would a two-flavour tasting kit be helpful, or would you prefer a brief 10-minute call to discuss next steps?"
+    )
+
+    # -------------------------------- assemble email
     return (
         f"{greeting}\n\n"
+        f"{dynamic_opening}\n"
         f"{intro}\n"
-        f"{hook}\n\n"
+        f"We understand that {row['Company']} excels in {fact1.lower()} and {fact2.lower()}, "
+        f"which aligns perfectly with our premium snack portfolio.\n\n"
         f"{products}\n\n"
         f"{incentives}\n\n"
         f"{cta}\n\n"
         "Best regards,\n"
         "Adam Noah Azlan\n"
-        "Senior BD Representative · Happy Global\n"
-        "+1 945-899-3624"
+        "Senior Business Development Representative\n"
     )
 
 # ---------- main ---------- #
